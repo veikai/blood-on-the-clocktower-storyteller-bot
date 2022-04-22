@@ -1,15 +1,17 @@
 import random
-from .evil import all_evils, all_demons, all_minions
+from .evil import all_evil, all_demons, all_minions
 from .evil.minions import Baron, ScarletWoman, Spy, Poisoner
 from .good import all_good, all_outsiders, all_townsfolk
 from .good.outsiders import Drunk
 from .evil.demons import Imp
 from .good.outsiders import Saint
-from .good.townsfolk import Virgin, Slayer, Librarian, WasherWoman, Investigator, Chef, RavenKeeper, UnderTaker, Mayor
+from .good.townsfolk import (Virgin, Slayer, Librarian, WasherWoman, Investigator, Chef, RavenKeeper, UnderTaker, Mayor,
+                             Monk, Soldier)
 
 
-all_roles = all_evils + all_good
-skip_at_first_night = (UnderTaker, Imp)
+all_roles = all_evil + all_good
+skip_at_first_night = (UnderTaker, Imp, Monk, Virgin, Saint, Soldier)
+skip_at_night = (WasherWoman, Librarian, Chef, Investigator, Slayer, Virgin, Saint)
 
 player_role_num = {
     5: (3, 0, 1, 1),
@@ -41,14 +43,13 @@ def assign_roles(player_num):
     for townsfolk in random.sample(all_townsfolk, townsfolk_num):
         game_roles.append(townsfolk)
     for outsider in random.sample(all_outsiders, outsider_num):
-        if outsider is Drunk:
-            while True:
-                fake_role = random.choice(all_townsfolk)
-                if fake_role not in game_roles:
-                    fake_role.is_drunk = True
-                    break
-            game_roles.append(fake_role)
-            continue
         game_roles.append(outsider)
     random.shuffle(game_roles)
     return game_roles
+
+
+def get_drunk_role(game_roles):
+    while True:
+        drunk_role = random.choice(all_townsfolk)
+        if drunk_role not in game_roles:
+            return drunk_role

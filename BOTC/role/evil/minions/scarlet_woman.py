@@ -1,5 +1,5 @@
-from .base import EvilBase
+from .base import MinionBase
 
 
-class ScarletWoman(EvilBase):
+class ScarletWoman(MinionBase):
     name = "猩红女郎"

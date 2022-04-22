@@ -1,14 +1,19 @@
 import random
+from ...evil.minions import all_minions
+from ...evil.demons import all_demons
 from .base import OutsiderBase
 
 
 class Recluse(OutsiderBase):
     name = "隐士"
+    fake_role = None
 
-    @property
-    def is_evil(self):
-        return random.choice([0, 1, 2]) != 2
-
-    @property
-    def is_demon(self):
-        return random.choice([0, 1, 2]) == 0
+    @staticmethod
+    def at_night(all_roles):
+        role_type = random.choice([0, 1, 2])
+        if role_type == 1:
+            Recluse.fake_role = random.choice(all_minions)
+        elif role_type == 2:
+            Recluse.fake_role = random.choice(all_demons)
+        else:
+            Recluse.fake_role = Recluse

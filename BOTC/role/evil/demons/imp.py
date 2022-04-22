@@ -1,6 +1,4 @@
 import random
-from typing import List
-from BOTC.player import Player
 from .base import DemonBase
 from ..minions import all_minions
 
@@ -13,7 +11,7 @@ class Imp(DemonBase):
         return "请发送要猎杀的玩家序号，输入自己序号视为自刀"
 
     @staticmethod
-    def action(target: list, all_players: List[Player]):
+    def action(target, all_players):
         target = target[0]
         if target >= all_players.__len__():
             return

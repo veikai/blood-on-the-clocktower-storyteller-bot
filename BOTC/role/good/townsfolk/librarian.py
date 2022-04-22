@@ -2,37 +2,39 @@ import random
 from .base import TownsfolkBase
 from ..outsiders.base import OutsiderBase
 from ..outsiders import Drunk, all_outsiders
+from ...evil.minions import Spy
 
 
 class Librarian(TownsfolkBase):
+    """
+    You start knowing that 1 of 2 players is a particular Outsider. (Or that zero are in play.)
+    """
     name = "图书管理员"
-    is_drunk = False
 
     @staticmethod
-    def action(target: list, all_players: list):
-        if Librarian.is_drunk:
-            return Librarian.random_action(target, all_players)
-        else:
-            outsider_players = [player for player in all_players if issubclass(player.role, OutsiderBase) or player.role.is_drunk]
-            if not outsider_players:
-                return "本场游戏没有外来者"
+    def get_action_result(self, all_players):
+        other_players = [player for player in all_players if player is not self]
+        if self.is_drunk or self.is_poisoned:
+            if random.choice([True, False]):
+                player1, player2 = random.sample(other_players, 2)
+                return (f"玩家 {all_players.index(player1)} 和 {all_players.index(player2)} "
+                        f"中间有一个外来者 {random.choice(all_outsiders).name}")
             else:
-                outsider_player = random.choice(outsider_players)
-                outsider_name = Drunk.name if outsider_player.role.is_drunk else outsider_player.role.name
-                index1 = all_players.index(outsider_player)
-                while True:
-                    player = random.choice(all_players)
-                    index2 = all_players.index(player)
-                    if index1 != index2:
-                        index_list = [str(index1), str(index2)]
-                        random.shuffle(index_list)
-                        return f"玩家 {'和'.join(index_list)} 之间有一个外来者 {outsider_name}"
-
-    @staticmethod
-    def random_action(target: list, all_players: list):
-        if random.choice([True, False]):
-            index_list = [str(all_players.index(player)) for player in random.sample(all_players, 2)]
-            return f"玩家 {'和'.join(index_list)} 之间有一个外来者 {random.choice(all_outsiders).name}"
+                return "本局游戏没有外来者"
         else:
-            return "本场游戏没有外来者"
-
+            outsider_players = []
+            player2role = {}
+            for player in other_players:
+                if role := player.is_outsider():
+                    outsider_players.append(player)
+                    player2role[player] = role
+            if not outsider_players:
+                return "本局游戏没有外来者"
+            outsider_player = random.choice(outsider_players)
+            while True:
+                player2 = random.choice(other_players)
+                if player2 is not outsider_player:
+                    index1, index2 = all_players.index(outsider_player), all_players.index(player2)
+                    index_list = [str(index1), str(index2)]
+                    random.shuffle(index_list)
+                    return f"玩家 {'和'.join(index_list)} 中间有一个外来者 {player2role[outsider_player].name}"
