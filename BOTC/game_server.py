@@ -15,6 +15,16 @@ async def recv_user_msg(websocket):
             _, target = message.split("@")
             target = [int(_target) - 1 for _target in target.split(",")]
             await game.do_action(int(index) - 1, target)
+        elif message == "下阶段":
+            await game.next_stage()
+        elif message.startswith("提名"):
+            _, target = message.split("@")
+            await game.nominate(int(index) - 1, int(target) - 1)
+        elif message.startswith("投票"):
+            _, target = message.split("@")
+            await game.vote(int(index) - 1, int(target) - 1)
+        elif message == "处决":
+            await game.execute()
         # print("recv_text:", websocket.pong, recv_text)
         # response_text = f"Server return: {recv_text}"
         # print("response_text:", response_text)

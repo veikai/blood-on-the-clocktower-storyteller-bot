@@ -10,7 +10,7 @@ from .good.townsfolk import (Virgin, Slayer, Librarian, WasherWoman, Investigato
 
 
 all_roles = all_evil + all_good
-skip_at_first_night = (UnderTaker, Imp, Monk, Virgin, Saint, Soldier)
+skip_at_first_night = (UnderTaker, Imp, Monk, Virgin, Saint, Soldier, Mayor)
 skip_at_night = (WasherWoman, Librarian, Chef, Investigator, Slayer, Virgin, Saint)
 
 player_role_num = {

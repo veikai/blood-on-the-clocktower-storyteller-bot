@@ -6,17 +6,27 @@ class Player:
         self.killed = False  # 夜晚被杀
         self.protected = False  # 夜晚被保护
         self.is_poisoned = False  # 夜晚被毒
-        self.with_butler = False  # 管家跟票
+        self.with_butler = 0  # 管家跟票
         self.is_fake_demon = False  # 被占卜师视为恶魔
         self.is_drunk = False  # 酒鬼
+        self.non_voting = False  # 无投票权
+
+    def at_night(self, all_roles):
+        self.is_poisoned = False
+        self.with_butler = 0
+        self.role.at_night(all_roles)
 
     @property
-    def id_dead(self):
+    def is_dead(self):
         if not self.__is_dead:
             self.__is_dead = self.killed and not self.protected
             self.killed = False
             self.protected = False
         return self.__is_dead
+
+    @is_dead.setter
+    def is_dead(self, value):
+        self.__is_dead = value
 
     def get_action_msg(self):
         return self.role.get_action_msg()

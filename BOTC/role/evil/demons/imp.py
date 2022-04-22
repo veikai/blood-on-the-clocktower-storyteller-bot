@@ -8,7 +8,7 @@ class Imp(DemonBase):
 
     @staticmethod
     def get_action_msg():
-        return "请发送要猎杀的玩家序号，输入自己序号视为自刀"
+        return "请发送 行动@+要猎杀的玩家序号 例如 行动@1 ，输入自己序号视为自刀"
 
     @staticmethod
     def action(target, all_players):

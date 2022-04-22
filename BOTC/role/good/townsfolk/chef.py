@@ -19,9 +19,12 @@ class Chef(TownsfolkBase):
                 count = random.choice([0, 1, 2, 3])
         else:
             count = 0
-            for i, player in enumerate(all_players[:-1]):
+            for i, player in enumerate(all_players):
                 if player.is_evil():
-                    next_player = all_players[i + 1]
+                    if i + 1 == all_players.__len__():
+                        next_player = all_players[0]
+                    else:
+                        next_player = all_players[i + 1]
                     if next_player.is_evil():
                         count += 1
         return f"有 {count} 对邻座邪恶玩家"
