@@ -46,7 +46,7 @@ class Game:
             evil_partners = [(i, self.roles[i]) for i in evil_player_index if index != i]
             await player.send(f"你的同伙是")
             for i, role in evil_partners:
-                await player.send(f"{i} 号玩家 身份 {role.name}")
+                await player.send(f"{i + 1} 号玩家 身份 {role.name}")
         self.action_order = self.players.copy()
         random.shuffle(self.action_order)
         while self.action_order:

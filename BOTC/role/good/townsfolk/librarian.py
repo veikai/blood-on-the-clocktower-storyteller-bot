@@ -1,8 +1,6 @@
 import random
 from .base import TownsfolkBase
-from ..outsiders.base import OutsiderBase
-from ..outsiders import Drunk, all_outsiders
-from ...evil.minions import Spy
+from ..outsiders import all_outsiders
 
 
 class Librarian(TownsfolkBase):
@@ -35,6 +33,6 @@ class Librarian(TownsfolkBase):
                 player2 = random.choice(other_players)
                 if player2 is not outsider_player:
                     index1, index2 = all_players.index(outsider_player), all_players.index(player2)
-                    index_list = [str(index1), str(index2)]
+                    index_list = [str(index1 + 1), str(index2 + 1)]
                     random.shuffle(index_list)
                     return f"玩家 {'和'.join(index_list)} 中间有一个外来者 {player2role[outsider_player].name}"
