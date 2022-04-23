@@ -1,16 +1,17 @@
+from ....game import Game
 from .base import OutsiderBase
 
 
 class Butler(OutsiderBase):
     name = "管家"
+    action_guides = "请发送 action@+要跟票的玩家序号，例如 action@2\n发送0则视为不跟票"
 
     @staticmethod
-    def get_action_msg():
-        return "请发送要跟票的玩家序号，发送0则视为不跟票"
-
-    @staticmethod
-    def action(target: list, all_players: list):
-        target = target[0]
-        if target >= all_players.__len__():
+    def action(targets: list, game: Game):
+        player_self = Butler.get_player_self(Butler, game)
+        target = targets[0]
+        if target == -1 or target == game.players.index(player_self):
             return
-        all_players[target].with_butler = True
+        target_player = game.players[target]
+        target_player.butler = player_self
+        print(f"玩家 {player_self.name} 跟票玩家 {target_player.name}")

@@ -7,7 +7,7 @@ class Recluse(OutsiderBase):
     fake_role = None
 
     @staticmethod
-    def at_night(all_roles):
+    def init_night():
         from ...evil.minions import all_minions
         from ...evil.demons import all_demons
         role_type = random.choice([0, 1, 2])

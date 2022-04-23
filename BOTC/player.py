@@ -1,38 +1,46 @@
+import random
+import weakref
+
+
 class Player:
-    def __init__(self, websocket):
+    def __init__(self, game, name, websocket):
+        self.game = weakref.ref(game)
+        self.name = name
         self.websocket = websocket
         self.role = None
         self.__is_dead = False
         self.killed = False  # 夜晚被杀
         self.protected = False  # 夜晚被保护
-        self.is_poisoned = False  # 夜晚被毒
-        self.with_butler = 0  # 管家跟票
+        self.poisoned = False  # 夜晚被毒
+        self.butler = None  # 跟票管家
         self.is_fake_demon = False  # 被占卜师视为恶魔
         self.is_drunk = False  # 酒鬼
         self.non_voting = False  # 无投票权
-
-    def at_night(self, all_roles):
-        self.is_poisoned = False
-        self.with_butler = 0
-        self.role.at_night(all_roles)
+        self.extra_info = ""
+        self.executed_by_vote = False
 
     @property
     def is_dead(self):
-        if not self.__is_dead:
-            self.__is_dead = self.killed and not self.protected
-            self.killed = False
-            self.protected = False
         return self.__is_dead
 
     @is_dead.setter
     def is_dead(self, value):
         self.__is_dead = value
+        if value:
+            self.role.dead()
 
-    def get_action_msg(self):
-        return self.role.get_action_msg()
+    def init_night(self):
+        self.poisoned = False
+        self.protected = False
+        self.killed = False
+        self.butler = None
+        self.role.init_night()
 
-    def action(self, target: list, all_players):
-        return self.role.action(target, all_players)
+    def get_action_guides(self):
+        return self.role.action_guides
+
+    def action(self, targets: list):
+        return self.role.action(targets, self.game())
 
     def is_evil(self):
         from .role.evil import all_evil
@@ -86,10 +94,17 @@ class Player:
             return self.role
         elif self.role is Recluse and Recluse.fake_role in all_demons:
             return self.role.fake_role
+        elif self.is_fake_demon:
+            return random.choice(all_demons)
         return None
 
-    def get_action_result(self, all_players: list):
-        return self.role.get_action_result(self, all_players)
+    async def send_info(self):
+        if self.extra_info:
+            await self.send(self.extra_info)
+            self.extra_info = ""
+        info = self.role.get_info(self.game())
+        if info:
+            await self.send(info)
 
     async def send(self, msg):
         await self.websocket.send(msg)

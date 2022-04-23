@@ -1,4 +1,5 @@
 import random
+from ....game import Game
 from .base import TownsfolkBase
 
 
@@ -9,16 +10,16 @@ class Investigator(TownsfolkBase):
     name = "调查者"
 
     @staticmethod
-    def get_action_result(self, all_players):
-        other_players = [player for player in all_players if player is not self]
-        if self.is_poisoned or self.is_drunk:
+    def get_info(game: Game):
+        player_self = Investigator.get_player_self(Investigator, game)
+        other_players = [player for player in game.players if player is not player_self]
+        if player_self.poisoned or player_self.is_drunk:
             from ...evil.minions import all_minions
             player1, player2 = random.sample(other_players, 2)
             role = random.choice(all_minions)
         else:
             while True:
                 player1, player2 = random.sample(other_players, 2)
-                player = random.choice([player1, player2])
-                if role := player.is_minion():
+                if (role := player1.is_minion()) or (role := player2.is_minion()):
                     break
-        return f"玩家 {all_players.index(player1) + 1} 和 {all_players.index(player2) + 1} 中间有一个 {role.name}"
+        return f"玩家 {player1.name} 和 {player2.name} 中有一个 {role.name}"

@@ -1,4 +1,5 @@
 import random
+from ....game import Game
 from .base import TownsfolkBase
 from ..outsiders import all_outsiders
 
@@ -10,13 +11,13 @@ class Librarian(TownsfolkBase):
     name = "图书管理员"
 
     @staticmethod
-    def get_action_result(self, all_players):
-        other_players = [player for player in all_players if player is not self]
-        if self.is_drunk or self.is_poisoned:
+    def get_info(game: Game):
+        player_self = Librarian.get_player_self(Librarian, game)
+        other_players = [player for player in game.players if player is not player_self]
+        if player_self.is_drunk or player_self.poisoned:
             if random.choice([True, False]):
                 player1, player2 = random.sample(other_players, 2)
-                return (f"玩家 {all_players.index(player1)} 和 {all_players.index(player2)} "
-                        f"中间有一个外来者 {random.choice(all_outsiders).name}")
+                return f"玩家 {player1.name} 和 {player2.name} 中有一个 {random.choice(all_outsiders).name}"
             else:
                 return "本局游戏没有外来者"
         else:
@@ -32,7 +33,6 @@ class Librarian(TownsfolkBase):
             while True:
                 player2 = random.choice(other_players)
                 if player2 is not outsider_player:
-                    index1, index2 = all_players.index(outsider_player), all_players.index(player2)
-                    index_list = [str(index1 + 1), str(index2 + 1)]
-                    random.shuffle(index_list)
-                    return f"玩家 {'和'.join(index_list)} 中间有一个外来者 {player2role[outsider_player].name}"
+                    player_list = [outsider_player.name, player2.name]
+                    random.shuffle(player_list)
+                    return f"玩家 {'和'.join(player_list)} 中有一个 {player2role[outsider_player].name}"

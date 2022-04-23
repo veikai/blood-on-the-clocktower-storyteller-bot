@@ -1,17 +1,15 @@
+from ....game import Game
 from .base import MinionBase
 
 
 class Poisoner(MinionBase):
     name = "投毒者"
+    action_guides = "请发送 action@+要毒的玩家序号,例如 action@3, 发送0则视为不下毒"
 
     @staticmethod
-    def get_action_msg():
-        return "请发送要毒的玩家序号"
-
-    @staticmethod
-    def action(target: list, all_players: list):
-        target = target[0]
-        if target >= all_players.__len__():
-            return
-        all_players[target].is_poisoned = True
-        print(f"投毒者给 {target} 号玩家下毒")
+    def action(targets: list, game: Game):
+        player_self = Poisoner.get_player_self(Poisoner, game)
+        target = targets[0]
+        target_player = game.players[target]
+        target_player.poisoned = True
+        print(f"玩家 {player_self.name} 对玩家 {target_player.name} 使用毒药")

@@ -1,30 +1,45 @@
 from typing import List
-from ..player import Player
+from ..game import Game
 
 
 class RoleBase:
-    is_drunk = False
+    name = ""
+    action_guides = ""
 
     @staticmethod
-    def get_action_msg():
+    def init_night():
         pass
 
     @staticmethod
-    def action(target: List[int], all_players: List[Player]):
+    def action(targets: List[int], game: Game):
+        """
+        :param targets: 目标玩家索引
+        :param game: 游戏上下文
+        :return:
+        """
         pass
 
     @staticmethod
-    def random_action(target: List[int], all_players: List[Player]):
+    def get_info(game: Game):
+        """
+        获取夜晚信息或行动结果
+        :param game: 游戏上下文
+        :return:
+        """
         pass
 
     @staticmethod
-    def get_action_result(self: Player, all_players: List[Player]):
-        pass
+    def get_player_self(cls, game: Game):
+        alive_players = [player for player in game.players if not player.is_dead]
+        for player in alive_players:
+            if player.role is cls:
+                return player
 
     @staticmethod
-    def at_night(all_roles):
-        pass
-
-    @staticmethod
-    def at_day():
+    def dead(game: Game):
+        """
+        死亡触发事件
+        :param game:
+        :return:
+        """
         pass

@@ -1,17 +1,19 @@
 import random
+from typing import List
 from .evil import all_evil, all_demons, all_minions
 from .evil.minions import Baron, ScarletWoman, Spy, Poisoner
 from .good import all_good, all_outsiders, all_townsfolk
 from .good.outsiders import Drunk
 from .evil.demons import Imp
-from .good.outsiders import Saint
+from .good.outsiders import Saint, Butler
 from .good.townsfolk import (Virgin, Slayer, Librarian, WasherWoman, Investigator, Chef, RavenKeeper, UnderTaker, Mayor,
-                             Monk, Soldier)
+                             Monk, Soldier, FortuneTeller, Empath)
+from ..player import Player
 
 
 all_roles = all_evil + all_good
-skip_at_first_night = (UnderTaker, Imp, Monk, Virgin, Saint, Soldier, Mayor)
-skip_at_night = (WasherWoman, Librarian, Chef, Investigator, Slayer, Virgin, Saint)
+action_order_at_first_night = (Poisoner, WasherWoman, Librarian, Investigator, Chef, Empath, FortuneTeller, Butler, Spy)
+action_order_at_night = (Poisoner, Monk, ScarletWoman, Imp, RavenKeeper, Empath, FortuneTeller, Butler, UnderTaker, Spy)
 
 player_role_num = {
     5: (3, 0, 1, 1),
@@ -28,10 +30,10 @@ player_role_num = {
 }
 
 
-def assign_roles(player_num):
+def _generate_game_roles(player_num):
     game_roles = []
     if player_num < 5 or player_num > 15:
-        raise Exception("too many players")
+        raise Exception("The number of players should be between 5 and 15")
     townsfolk_num, outsider_num, minion_num, demon_num = player_role_num[player_num]
     for demon in random.sample(all_demons, demon_num):
         game_roles.append(demon)
@@ -48,8 +50,24 @@ def assign_roles(player_num):
     return game_roles
 
 
-def get_drunk_role(game_roles):
-    while True:
-        drunk_role = random.choice(all_townsfolk)
-        if drunk_role not in game_roles:
-            return drunk_role
+def assign_roles(players: List[Player]):
+    player_num = players.__len__()
+    game_roles = _generate_game_roles(player_num)
+    evil_players = []
+    good_players = []
+    for i, role in enumerate(game_roles):
+        player = players[i]
+        print("玩家", player.name, "的真实身份是", role.name)
+        if role is Drunk:
+            # 给酒鬼玩家分配村民角色
+            other_townsfolk = [role for role in all_townsfolk if role not in game_roles]
+            role = random.choice(other_townsfolk)
+            player.is_drunk = True
+        player.role = role
+        if role in all_evil:
+            evil_players.append(player)
+        else:
+            good_players.append(player)
+    if FortuneTeller in game_roles:  # 如果存在占卜师，随机一个被占卜师视为恶魔的玩家
+        unlucky_players = [player for player in good_players if player is not FortuneTeller]
+        random.choice(unlucky_players).is_fake_demon = True

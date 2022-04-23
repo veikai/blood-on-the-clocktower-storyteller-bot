@@ -30,6 +30,7 @@
       var message = document.getElementById("mes").value + "#" + index;
       document.getElementById("showMes").value+=message+"\n\n";
       socket.send(message);
+      document.getElementById("mes").value = "";
     }
   </script>
 </head>

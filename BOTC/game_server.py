@@ -11,7 +11,7 @@ async def recv_user_msg(websocket):
         message, index = recv_str.split("#")
         if message == "开始游戏":
             await game.start()
-        elif message.startswith("行动"):
+        elif message.startswith("action"):
             _, target = message.split("@")
             target = [int(_target) - 1 for _target in target.split(",")]
             await game.do_action(int(index) - 1, target)

@@ -1,25 +1,19 @@
-import random
+from ....game import Game
 from .base import DemonBase
-from ..minions import all_minions
 
 
 class Imp(DemonBase):
     name = "小恶魔"
+    action_guides = "请发送 action@+要猎杀的玩家序号 例如 action@1 ，输入自己序号视为自刀"
 
     @staticmethod
-    def get_action_msg():
-        return "请发送 行动@+要猎杀的玩家序号 例如 行动@1 ，输入自己序号视为自刀"
+    def action(targets: list, game: Game):
+        player_self = Imp.get_player_self(Imp, game)
+        target = targets[0]
+        target_player = game.players[target]
+        target_player.killed = True
+        print(f"玩家 {player_self.name} 猎杀玩家 {target_player.name}")
 
     @staticmethod
-    def action(target, all_players):
-        target = target[0]
-        if target >= all_players.__len__():
-            return
-        target_player = all_players[target]
-        all_players[target].killed = True
-        if target_player.role is Imp:
-            minion_players = [player for player in all_players if player.role in all_minions]
-            minion_player = random.choice(minion_players)
-            minion_player.role = Imp
-        else:
-            print("小恶魔猎杀了", target, "号玩家")
+    def dead(game: Game):
+        pass
