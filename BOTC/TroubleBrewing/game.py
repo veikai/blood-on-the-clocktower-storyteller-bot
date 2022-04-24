@@ -75,7 +75,7 @@ class Game:
     async def do_action(self, player_index: int, targets: list):
         player = self.players[player_index]
         if player is self.action_player:
-            player.action(targets)
+            await player.action(targets)
         if self.action_order:
             self.action_player = self.action_order.pop()
             self.action_player.send_action_guides()
