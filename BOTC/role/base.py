@@ -4,7 +4,7 @@ from ..player import Player
 
 class RoleBase:
     name = ""
-    action_guides = "请发送 action 跳过当前阶段"
+    action_guides = "请发送 action 来获取你今晚的信息"
 
     @property
     def genuine_category(self):

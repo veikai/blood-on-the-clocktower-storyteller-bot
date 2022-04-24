@@ -3,7 +3,7 @@ from enum import Enum
 from typing import List
 from ..player import Player
 from .role import (all_demons, all_minions, all_outsiders, all_townsfolk, all_evil, all_good, all_roles, assign_roles,
-                   action_order_at_first_night, action_order_at_night, Virgin, Saint, Imp, ScarletWoman, Mayor, Soldier)
+                   action_order_at_first_night, action_order_at_night, Virgin, Saint, Imp, ScarletWoman, Mayor, Slayer)
 
 
 class Stage(Enum):
@@ -23,15 +23,20 @@ class Game:
         self.vote_cache = []  # 已投票玩家
         self.nominator_cache = []  # 提名他人的玩家
         self.shoot_cache = []
+        self.dead_players = []
         self.action_player = None  # 当前行动玩家
 
     @property
     def alive_players(self):
         return [player for player in self.players if not player.is_dead]
 
+    # @property
+    # def dead_players(self):
+    #     return [player for player in self.players if player.is_dead]
+
     @property
-    def dead_players(self):
-        return [player for player in self.players if player.is_dead]
+    def evil_players(self):
+        return [player for player in self.players if player.role.genuine_category in all_evil]
 
     async def add_player(self, websocket):
         player = Player(self, str(self.players.__len__() + 1), websocket)
@@ -46,12 +51,13 @@ class Game:
         self.vote_cache.clear()
         self.nominator_cache.clear()
         self.shoot_cache.clear()
+        self.dead_players.clear()
+        for player in self.players:
+            player.init(self)
 
     async def night_action(self):
-        evil_players = []
         if self.stage is Stage.first_night:
             self.action_order = action_order_at_first_night
-            evil_players = [player for player in self.players if player.role.genuine_category in all_evil]
         elif self.stage is Stage.night:
             self.action_order = action_order_at_night
         else:
@@ -72,8 +78,9 @@ class Game:
         self.action_players.reverse()
         while self.action_players:
             self.action_player = self.action_players.pop()
-            if self.stage is Stage.first_night and self.action_player in evil_players:
-                evil_partners = [player for player in evil_players if player is not self.action_player]
+            print(self.action_player.name, "轮次")
+            if self.stage is Stage.first_night and self.action_player in self.evil_players:
+                evil_partners = [player for player in self.evil_players if player is not self.action_player]
                 partner_info = "\n".join([f'玩家 {player.name}, ta的身份是 {player.role.genuine_category.name}'
                                           for player in evil_partners])
                 await self.action_player.send(f"你的伙伴是：\n{partner_info}")
@@ -87,6 +94,10 @@ class Game:
         self.new_game()
         assign_roles(self.players)
         for i, player in enumerate(self.players):
+            await player.send(("发送 action@玩家序号 选择行动目标，多个目标用英文逗号分隔，例如 action2 action3,5\n"
+                               "发送 nominate@玩家序号 提名投票处决目标玩家 例如 nominate@2\n"
+                               "发送 vote@玩家序号 投票处决目标玩家 例如 vote@2\n"
+                               "发送 shoot@玩家序号 对目标玩家开枪 例如 shoot@2"))
             await player.send(f"你的身份是 {player.role.name}")
         await self.night_action()
 
@@ -96,6 +107,12 @@ class Game:
             await player.action(targets)
         while self.action_players:
             self.action_player = self.action_players.pop()
+            print(self.action_player.name, "轮次")
+            if self.stage is Stage.first_night and self.action_player in self.evil_players:
+                evil_partners = [player for player in self.evil_players if player is not self.action_player]
+                partner_info = "\n".join([f'玩家 {player.name}, ta的身份是 {player.role.genuine_category.name}'
+                                          for player in evil_partners])
+                await self.action_player.send(f"你的伙伴是：\n{partner_info}")
             if self.action_player.role.genuine_category in self.action_order:
                 await self.action_player.send_action_guides()
                 break
@@ -114,10 +131,13 @@ class Game:
         if self.stage == Stage.first_night or self.stage == Stage.night:
             self.stage = Stage.day
             await self.send_all("天亮了")
+            dead_at_night = []
             for player in self.players:
                 if player.is_dead and player not in self.dead_players:
-                    await self.send_all(f"今晚死亡的是玩家 {player.name}")
-                    break
+                    self.dead_players.append(player)
+                    dead_at_night.append(player)
+            if dead_at_night:
+                await self.send_all(f"今晚死亡的是 {','.join([f'玩家 {player.name}' for player in dead_at_night])}")
             else:
                 await self.send_all("今晚是平安夜")
             await self.send_all(f"请玩家 {random.choice(self.players).name} 号玩家开始发言")
@@ -232,7 +252,7 @@ class Game:
         target_player = self.players[target]
         if shoot_player not in self.shoot_cache:
             self.shoot_cache.append(shoot_player)
-            if (shoot_player.role.category is Soldier
+            if (shoot_player.role.category is Slayer
                     and not shoot_player.is_drunk
                     and not shoot_player.poisoned
                     and target_player.register_as_demon()):

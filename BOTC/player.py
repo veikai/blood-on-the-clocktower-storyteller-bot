@@ -42,6 +42,23 @@ class Player:
             self.is_dead = True
         self.__died_of_voting = value
 
+    def init(self, game):
+        self.game = weakref.ref(game)
+        self.game_module = importlib.import_module(game.__module__)
+        self.role = None
+        self.is_dead = False
+        self.protected = False  # 夜晚被保护
+        self.poisoned = False  # 夜晚被毒
+        self.killed = False  # 夜晚被杀
+        self.butler = None  # 跟票管家
+        self.non_voting = False  # 无投票权
+        self.extra_info = ""
+        self.__died_of_killing = False  # 夜晚被杀死
+        self.__died_of_voting = False  # 被投票处决死
+        # for Trouble Brewing
+        self.is_drunk = False  # 酒鬼身份
+        self.is_fake_imp = False  # 被占卜师当成恶魔的好人
+
     def init_night(self):
         self.killed = False
         self.poisoned = False
@@ -49,13 +66,14 @@ class Player:
         self.butler = None
 
     async def send_action_guides(self):
+        if self.extra_info:
+            await self.send(self.extra_info)
+            self.extra_info = ""
         await self.send(self.role.action_guides)
 
     async def action(self, targets: list):
         game = self.game()
         target_players = [game.players[i] for i in targets if i != -1]
-        if not target_players:
-            return
         result = self.role.action(self, target_players)
         if result:
             await self.send(result)
@@ -105,14 +123,6 @@ class Player:
         if self.role.genuine_category in self.game_module.all_good:
             return True
         return False
-
-    async def send_info(self):
-        if self.extra_info:
-            await self.send(self.extra_info)
-            self.extra_info = ""
-        info = self.role.get_info(self.game())
-        if info:
-            await self.send(info)
 
     async def send(self, msg):
         await self.websocket.send(msg)

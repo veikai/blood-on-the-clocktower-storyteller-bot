@@ -13,10 +13,11 @@ class UnderTaker(TownsfolkBase):
 
     @staticmethod
     def action(self_player: Player, target_players: List[Player]):
+        if not target_players:
+            return "你没有选择行动目标"
         target_player = target_players[0]
         if not target_player.died_of_voting:
-            self_player.send("只能挖被投票处决的坟")
-            return
+            return "只能挖被投票处决的玩家的坟"
         if self_player.is_dead or self_player.is_drunk or self_player.poisoned:
             from ....TroubleBrewing.role import all_roles
             role = random.choice([role for role in all_roles if role is not UnderTaker])

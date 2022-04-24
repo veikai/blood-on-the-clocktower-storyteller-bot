@@ -9,6 +9,8 @@ class Butler(OutsiderBase):
 
     @staticmethod
     def action(self_player: Player, target_players: List[Player]):
+        if not target_players:
+            return "你没有选择行动目标"
         target_player = target_players[0]
         if not self_player.poisoned and not self_player.is_dead:
             target_player.butler = self_player

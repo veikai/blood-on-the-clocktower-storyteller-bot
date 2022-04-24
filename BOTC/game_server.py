@@ -26,19 +26,19 @@ async def recv_user_msg(websocket):
         command, index = recv_str.split("#")
         player_index = int(index) - 1
         command, targets = parse_command(command)
-        if command == "开始游戏":
+        if command == "start game":
             await game.start()
         elif command.startswith("action"):
             await game.do_action(player_index, targets)
-        elif command == "下阶段":
+        elif command == "next stage":
             await game.next_stage()
-        elif command.startswith("提名"):
+        elif command.startswith("nominate"):
             if targets:
                 await game.nominate(player_index, targets[0])
-        elif command.startswith("投票"):
+        elif command.startswith("vote"):
             if targets:
                 await game.vote(player_index, targets[0])
-        elif command == "处决":
+        elif command == "execute":
             await game.execute()
         elif command.startswith("shoot"):
             if targets:
@@ -51,6 +51,7 @@ async def recv_user_msg(websocket):
 async def run(websocket, path):
     await game.add_player(websocket)
     await websocket.send(f"欢迎来到钟楼#{game.players.__len__()}")
+
     while True:
         try:
             await recv_user_msg(websocket)

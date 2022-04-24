@@ -12,6 +12,8 @@ class Monk(TownsfolkBase):
 
     @staticmethod
     def action(self_player: Player, target_players: List[Player]):
+        if not target_players:
+            return "你没有选择行动目标"
         target_player = target_players[0]
         if target_player is self_player:
             self_player.send("你在想peach")

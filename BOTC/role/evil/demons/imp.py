@@ -11,6 +11,8 @@ class Imp(DemonBase):
 
     @staticmethod
     def action(self_player: Player, target_players: List[Player]):
+        if not target_players:
+            return "你没有选择行动目标"
         target_player = target_players[0]
         target_player.killed = True
         info = f"玩家 {self_player.name} 猎杀玩家 {target_player.name}"
@@ -23,8 +25,12 @@ class Imp(DemonBase):
             elif target_player is self_player:
                 # 小恶魔自刀 随机一个爪牙变成小恶魔
                 game = self_player.game()
-                lucky_dog = random.choice([player for player in game.alive_players if player.register_as_minion()])
-                lucky_dog.role = Imp()
-                lucky_dog.extra_info = "因小恶魔选择自刀，你成为了小恶魔"
+                if lucky_dogs := [player for player in game.alive_players if player.register_as_minion()]:
+                    lucky_dog = random.choice(lucky_dogs)
+                    lucky_dog.role = Imp()
+                    lucky_dog.extra_info = "因小恶魔选择自刀，你成为了小恶魔"
+                else:
+                    game = self_player.game()
+                    game.send_all("小恶魔自刀且没有能够变成小恶魔的爪牙，好人胜利，游戏结束")
             target_player.died_of_killing = True
         return info
