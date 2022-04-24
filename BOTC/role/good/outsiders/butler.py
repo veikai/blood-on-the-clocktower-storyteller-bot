@@ -1,4 +1,5 @@
-from ....game import Game
+from typing import List
+from ....player import Player
 from .base import OutsiderBase
 
 
@@ -7,11 +8,10 @@ class Butler(OutsiderBase):
     action_guides = "请发送 action@+要跟票的玩家序号，例如 action@2\n发送0则视为不跟票"
 
     @staticmethod
-    def action(targets: list, game: Game):
-        player_self = Butler.get_player_self(Butler, game)
-        target = targets[0]
-        if target == -1 or target == game.players.index(player_self):
-            return
-        target_player = game.players[target]
-        target_player.butler = player_self
-        print(f"玩家 {player_self.name} 跟票玩家 {target_player.name}")
+    def action(self_player: Player, target_players: List[Player]):
+        target_player = target_players[0]
+        if not self_player.poisoned and not self_player.is_dead:
+            target_player.butler = self_player
+        info = f"玩家 {self_player.name} 跟票玩家 {target_player.name}"
+        print(info)
+        return info

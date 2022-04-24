@@ -1,101 +1,99 @@
-import random
 import weakref
+import importlib
 
 
 class Player:
     def __init__(self, game, name, websocket):
         self.game = weakref.ref(game)
+        self.game_module = importlib.import_module(game.__module__)
         self.name = name
         self.websocket = websocket
         self.role = None
-        self.__is_dead = False
-        self.killed = False  # 夜晚被杀
+        self.is_dead = False
         self.protected = False  # 夜晚被保护
         self.poisoned = False  # 夜晚被毒
+        self.killed = False  # 夜晚被杀
         self.butler = None  # 跟票管家
-        self.is_fake_demon = False  # 被占卜师视为恶魔
-        self.is_drunk = False  # 酒鬼
         self.non_voting = False  # 无投票权
         self.extra_info = ""
-        self.executed_by_vote = False
+        self.__died_of_killing = False  # 夜晚被杀死
+        self.__died_of_voting = False  # 被投票处决死
+        # for Trouble Brewing
+        self.is_drunk = False  # 酒鬼身份
+        self.is_fake_imp = False  # 被占卜师当成恶魔的好人
 
     @property
-    def is_dead(self):
-        return self.__is_dead
+    def died_of_killing(self):
+        return self.__died_of_killing
 
-    @is_dead.setter
-    def is_dead(self, value):
-        self.__is_dead = value
+    @died_of_killing.setter
+    def died_of_killing(self, value):
         if value:
-            self.role.dead()
+            self.is_dead = True
+        self.__died_of_killing = value
+
+    @property
+    def died_of_voting(self):
+        return self.__died_of_voting
+
+    @died_of_voting.setter
+    def died_of_voting(self, value):
+        if value:
+            self.is_dead = True
+        self.__died_of_voting = value
 
     def init_night(self):
+        self.killed = False
         self.poisoned = False
         self.protected = False
-        self.killed = False
         self.butler = None
-        self.role.init_night()
 
-    def get_action_guides(self):
-        return self.role.action_guides
+    def send_action_guides(self):
+        self.send(self.role.action_guides)
 
-    def action(self, targets: list):
-        return self.role.action(targets, self.game())
+    async def action(self, targets: list):
+        game = self.game()
+        target_players = [game.players[i] for i in targets if i != -1]
+        if not target_players:
+            return
+        result = self.role.action(self, target_players)
+        if result:
+            await self.send(result)
 
-    def is_evil(self):
-        from .role.evil import all_evil
-        from .role.evil.minions import Spy
-        from .role.good.outsiders import Recluse
-        if self.role in all_evil:
-            return True
-        elif self.role is Recluse and Recluse.fake_role in all_evil:
-            return True
-        elif self.role is Spy and Spy.fake_role in all_evil:
-            return True
-        return False
-
-    def is_townsfolk(self):
-        from .role.good import all_townsfolk
-        from .role.evil.minions import Spy
-        if self.role in all_townsfolk:
-            return self.role
-        elif self.role is Spy and Spy.fake_role in all_townsfolk:
-            return self.role.fake_role
+    def register_as_good(self):
+        if (category := self.role.category) in self.game_module.all_good:
+            return category
         return None
 
-    def is_outsider(self):
-        from .role.good import all_outsiders
-        from .role.evil.minions import Spy
+    def register_as_evil(self):
+        if (category := self.role.category) in self.game_module.all_evil:
+            return category
+        return None
+
+    def register_as_townsfolk(self):
+        if (category := self.role.category) in self.game_module.all_townsfolk:
+            return category
+        return None
+
+    def register_as_outsider(self):
         from .role.good.outsiders import Drunk
-        if self.role in all_outsiders:
-            return self.role
-        elif self.role is Spy and Spy.fake_role in all_outsiders:
-            return self.role.fake_role
-        elif self.is_drunk:
+        if (category := self.role.category) in self.game_module.all_outsiders:
+            return category
+        elif self.is_drunk:  # Trouble Brewing
             return Drunk
         return None
 
-    def is_minion(self):
-        from .role.evil import all_minions
-        from .role.good.outsiders import Recluse
-        from .role.evil.minions import Spy
-        if self.role is Spy and Spy.fake_role in all_minions:
-            return self.role
-        elif self.role in all_minions:
-            return self.role
-        elif self.role is Recluse and Recluse.fake_role in all_minions:
-            return self.role.fake_role
+    def register_as_minion(self):
+        if (category := self.role.category) in self.game_module.all_minions:
+            return category
         return None
 
-    def is_demon(self):
-        from .role.evil import all_demons
-        from .role.good.outsiders import Recluse
-        if self.role in all_demons:
-            return self.role
-        elif self.role is Recluse and Recluse.fake_role in all_demons:
-            return self.role.fake_role
-        elif self.is_fake_demon:
-            return random.choice(all_demons)
+    def register_as_demon(self):
+        from .role.evil.demons import Imp
+        if (category := self.role.category) in self.game_module.all_demons:
+            return category
+        elif self.is_fake_imp:  # Trouble Brewing
+            return Imp
         return None
 
     async def send_info(self):

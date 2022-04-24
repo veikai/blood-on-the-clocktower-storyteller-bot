@@ -1,4 +1,5 @@
-from ....game import Game
+from typing import List
+from ....player import Player
 from .base import TownsfolkBase
 
 
@@ -10,11 +11,11 @@ class Monk(TownsfolkBase):
     action_guides = "请发送 action@+要守护的玩家序号,例如 action@3，发送0则视为不守护任何玩家"
 
     @staticmethod
-    def action(targets: list, game: Game):
-        player_self = Monk.get_player_self(Monk, game)
-        target = targets[0]
-        if target == -1 or target == game.players.index(player_self) or player_self.is_drunk or player_self.poisoned:
-            return
-        target_player = game.players[target]
-        target_player.protected = True
-        print(f"玩家 {player_self.name} 守护玩家 {target_player.name}")
+    def action(self_player: Player, target_players: List[Player]):
+        target_player = target_players[0]
+        if target_player is self_player:
+            self_player.send("你在想peach")
+        else:
+            print(f"玩家 {self_player.name} 守护玩家 {target_player.name}")
+            if not self_player.is_dead and not self_player.is_drunk and not self_player.poisoned:
+                target_player.protected = True

@@ -1,5 +1,6 @@
 import random
-from ....game import Game
+from typing import List
+from ....player import Player
 from .base import TownsfolkBase
 
 
@@ -10,16 +11,15 @@ class Investigator(TownsfolkBase):
     name = "调查者"
 
     @staticmethod
-    def get_info(game: Game):
-        player_self = Investigator.get_player_self(Investigator, game)
-        other_players = [player for player in game.players if player is not player_self]
-        if player_self.poisoned or player_self.is_drunk:
-            from ...evil.minions import all_minions
-            player1, player2 = random.sample(other_players, 2)
-            role = random.choice(all_minions)
+    def action(self_player: Player, target_players: List[Player]):
+        game = self_player.game()
+        if self_player.poisoned or self_player.is_drunk:
+            player1, player2 = random.sample(game.players, 2)
+            from ....TroubleBrewing.role import all_minions
+            category = random.choice(all_minions)
         else:
             while True:
-                player1, player2 = random.sample(other_players, 2)
-                if (role := player1.is_minion()) or (role := player2.is_minion()):
+                player1, player2 = random.sample(game.players, 2)
+                if (category := player1.register_as_minion()) or (category := player2.register_as_minion()):
                     break
-        return f"玩家 {player1.name} 和 {player2.name} 中有一个 {role.name}"
+        return f"玩家 {player1.name} 和 {player2.name} 中有一个 {category.name}"

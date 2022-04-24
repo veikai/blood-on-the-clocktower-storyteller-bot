@@ -1,8 +1,9 @@
 import random
 from enum import Enum
-from functools import partial
 from typing import List
-from .player import Player
+from ..player import Player
+from .role import (all_demons, all_minions, all_outsiders, all_townsfolk, all_evil, all_good, all_roles, assign_roles,
+                   action_order_at_first_night, action_order_at_night, Virgin, Saint, Imp, ScarletWoman, Mayor)
 
 
 class Stage(Enum):
@@ -17,10 +18,18 @@ class Game:
         self.stage = Stage.first_night
         self.player2action = {}
         self.action_order = []  # 夜晚玩家行动顺序
-        self.dead_cache = []  # 已死亡玩家
         self.nominated_players = {}  # 被提名玩家
         self.vote_cache = []  # 已投票玩家
         self.nominator_cache = []  # 提名他人的玩家
+        self.action_player = None  # 当前行动玩家
+
+    @property
+    def alive_players(self):
+        return [player for player in self.players if not player.is_dead]
+
+    @property
+    def dead_players(self):
+        return [player for player in self.players if player.is_dead]
 
     async def add_player(self, websocket):
         player = Player(self, str(self.players.__len__() + 1), websocket)
@@ -31,84 +40,47 @@ class Game:
         self.stage = Stage.first_night
         self.player2action.clear()
         self.action_order.clear()
-        self.dead_cache.clear()
         self.nominated_players.clear()
         self.vote_cache.clear()
         self.nominator_cache.clear()
 
     async def night_action(self):
-        from .role import action_order_at_first_night, action_order_at_night
-        self.action_order = [player for player in self.players if not player.is_dead]
-        random.shuffle(self.action_order)
         if self.stage is Stage.first_night:
             role_action_order = action_order_at_first_night
         elif self.stage is Stage.night:
             role_action_order = action_order_at_night
         else:
             raise Exception("game stage error")
-        for player in self.action_order:
-            if player.role in role_action_order and (action_msg := player.get_action_guides()):
-                self.player2action[player] = None
-                await player.send(action_msg)
-        if not self.player2action:
-            await self.process_actions()
+        for role in role_action_order:
+            for player in self.alive_players:
+                if player.role is role:
+                    self.action_order.append(player)
+                    break
+        non_action_players = [player for player in self.alive_players if player not in self.action_order]
+        while non_action_players:
+            player = non_action_players.pop()
+            index = random.choice(range(self.action_order.__len__()))
+            self.action_order.insert(index, player)
+        self.action_order.reverse()
+        self.action_player = self.action_order.pop()
+        self.action_player.send_action_guides()
 
     async def start(self):
         self.new_game()
-        from .role import assign_roles
         assign_roles(self.players)
         for i, player in enumerate(self.players):
             await player.send(f"你的身份是 {player.role.name}")
         await self.night_action()
 
-    async def do_action(self, player_index: int, target: list):
+    async def do_action(self, player_index: int, targets: list):
         player = self.players[player_index]
-        if player in self.player2action:
-            self.player2action[player] = partial(player.action, target)
-            if all(self.player2action.values()):
-                print("所有玩家行动决策完毕")
-                await self.process_actions()
-
-    async def process_actions(self):
-        """
-        结算当晚行动并向玩家发送行动结果
-        :return:
-        """
-        from .role import action_order_at_first_night, action_order_at_night
-        from .role.good.townsfolk import Soldier, Mayor, RavenKeeper
-        from .role.good import all_good
-        from .role.evil.demons import Imp
-        from .role.evil.minions import all_minions
-        self.init_night()
-        role2player = {player.role: player for player in self.players if not player.is_dead}
-        if self.stage is Stage.first_night:
-            action_order = action_order_at_first_night
-        elif self.stage is Stage.night:
-            action_order = action_order_at_night
+        if player is self.action_player:
+            player.action(targets)
+        if self.action_order:
+            self.action_player = self.action_order.pop()
+            self.action_player.send_action_guides()
         else:
-            raise Exception("game stage error")
-        for order_role in action_order:
-            if order_role in role2player:
-                player = role2player[order_role]
-                if player in self.player2action:
-                    action = self.player2action[player]
-                    action()
-        for player in self.action_order:
-            if player.killed:
-                if player.role is Soldier and not player.is_drunk and not player.poisoned and not player.protected:
-                    continue
-                elif player.role is Mayor and not player.is_drunk and not player.poisoned and not player.protected:
-                    # TODO: 替死概率
-                    # if not random.choice(range(self.action_order.__len__())):
-                    if not random.choice([0, 1, 2]):
-                        scapegoats = [player for player in self.action_order if player.role in all_good]
-                        scapegoat = random.choice(scapegoats)
-                        scapegoat.is_dead = True
-                elif not player.protected:
-                    player.is_dead = True
-        for player in self.action_order:
-            await player.send_info()
-        await self.next_stage()
+            await self.next_stage()
 
     def init_night(self):
         for player in self.players:
@@ -122,7 +94,7 @@ class Game:
             self.stage = Stage.day
             await self.send_all("天亮了")
             for player in self.players:
-                if player.is_dead and player not in self.dead_cache:
+                if player.is_dead and player not in self.dead_players:
                     await self.send_all(f"今晚死亡的是玩家 {player.name}")
                     break
             else:
@@ -144,7 +116,6 @@ class Game:
         nominator_player = self.players[nominator_index]  # 提名他人的玩家
         nominated_player = self.players[nominated_index]
         if nominated_player not in self.nominated_players and nominator_player not in self.nominator_cache:
-            from .role.good.townsfolk import Virgin, all_townsfolk
             await self.send_all(f"玩家 {nominator_player.name} 提名投票处决 玩家{nominated_player.name}")
             if (nominated_player.role is Virgin
                     and not nominated_player.is_drunk
@@ -193,10 +164,6 @@ class Game:
         """
         if not self.nominated_players:
             return
-        from .role.good.outsiders import Saint
-        from .role.good.townsfolk import Mayor
-        from .role.evil.minions import ScarletWoman
-        from .role.evil.demons import Imp
         alive_players = [player for player in self.players if not player.is_dead]
         vote_results = sorted(self.nominated_players.items(), key=lambda item: item[1].__len__(), reverse=True)
         if (vote_results[0][1].__len__() > alive_players.__len__() / 2 and

@@ -11,6 +11,3 @@ from .soldier import Soldier
 from .undertaker import UnderTaker
 from .virgin import Virgin
 from .washerwoman import WasherWoman
-
-all_townsfolk = [Chef, Empath, FortuneTeller, Investigator, Librarian, Mayor, Monk, RavenKeeper, Slayer, Soldier,
-                 UnderTaker, Virgin, WasherWoman]

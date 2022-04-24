@@ -1,33 +1,45 @@
 #! -*- coding: utf-8 -*-
 import asyncio
 import websockets
-from .game import game
+from .TroubleBrewing import game
 
 
-# 接收客户端消息并处理，这里只是简单把客户端发来的返回回去
+def parse_command(command):
+    commands = command.split("@")
+    if commands.__len__() == 2:
+        targets = []
+        for target in command[1].split(","):
+            try:
+                targets.append(int(target) - 1)
+            except ValueError:
+                pass
+            except Exception as e:
+                print(e)
+        return commands[0], targets
+    else:
+        return commands[0], []
+
+
 async def recv_user_msg(websocket):
     while True:
         recv_str = await websocket.recv()
-        message, index = recv_str.split("#")
-        if message == "开始游戏":
+        command, index = recv_str.split("#")
+        player_index = int(index) - 1
+        command, targets = parse_command(command)
+        if command == "开始游戏":
             await game.start()
-        elif message.startswith("action"):
-            _, target = message.split("@")
-            target = [int(_target) - 1 for _target in target.split(",")]
-            await game.do_action(int(index) - 1, target)
-        elif message == "下阶段":
+        elif command.startswith("action"):
+            await game.do_action(player_index, targets)
+        elif command == "下阶段":
             await game.next_stage()
-        elif message.startswith("提名"):
-            _, target = message.split("@")
-            await game.nominate(int(index) - 1, int(target) - 1)
-        elif message.startswith("投票"):
-            _, target = message.split("@")
-            await game.vote(int(index) - 1, int(target) - 1)
-        elif message == "处决":
+        elif command.startswith("提名"):
+            await game.nominate(player_index, targets[0])
+        elif command.startswith("投票"):
+            await game.vote(player_index, targets[0])
+        elif command == "处决":
             await game.execute()
-        # print("recv_text:", websocket.pong, recv_text)
-        # response_text = f"Server return: {recv_text}"
-        # print("response_text:", response_text)
+        else:
+            print("unknown command", command)
 
 
 # 服务器端主逻辑

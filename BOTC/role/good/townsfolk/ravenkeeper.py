@@ -1,8 +1,6 @@
 import random
-from ....game import Game
-from ....role import all_roles
-from ...good.outsiders import Recluse, Drunk
-from ...evil.minions import Spy
+from typing import List
+from ....player import Player
 from .base import TownsfolkBase
 
 
@@ -12,33 +10,17 @@ class RavenKeeper(TownsfolkBase):
     """
     name = "守鸦人"
     action_guides = ""
-    target = 0
 
     @staticmethod
-    def action(targets: list, game: Game):
-        RavenKeeper.target = targets[0]
-
-    @staticmethod
-    def get_info(game: Game):
-        if not RavenKeeper.target:
-            return
-        player_self = RavenKeeper.get_player_self(RavenKeeper, game)
-        target_player = game.players[RavenKeeper.target]
-        if RavenKeeper.target == -1 or RavenKeeper.target == game.players.index(player_self):
-            return
-        if player_self.is_drunk or player_self.poisoned:
-            other_roles = [role for role in all_roles if role is not RavenKeeper]
-            role = random.choice(other_roles)
+    def action(self_player: Player, target_players: List[Player]):
+        target_player = target_players[0]
+        if self_player.is_drunk or self_player.poisoned:
+            from ....TroubleBrewing.role import all_roles
+            role = random.choice([role for role in all_roles if role is not RavenKeeper])
         else:
             if target_player.is_drunk:
+                from ....TroubleBrewing.role import Drunk
                 role = Drunk
-            elif target_player.role is Spy or target_player.role is Recluse:
-                role = target_player.role.fake_role
             else:
-                role = target_player.role
+                role = target_player.role.category
         return f"玩家 {target_player} 的身份是 {role.name}"
-
-    @staticmethod
-    def dead(game: Game):
-        pass
-

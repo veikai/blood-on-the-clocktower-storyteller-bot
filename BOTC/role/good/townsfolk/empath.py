@@ -1,5 +1,6 @@
 import random
-from ....game import Game
+from typing import List
+from ....player import Player
 from .base import TownsfolkBase
 
 
@@ -10,24 +11,23 @@ class Empath(TownsfolkBase):
     name = "共情者"
 
     @staticmethod
-    def get_info(game: Game):
-        player_self = Empath.get_player_self(Empath, game)
-        if player_self.is_drunk or player_self.poisoned:
+    def action(self_player: Player, target_players: List[Player]):
+        game = self_player.game()
+        if self_player.is_drunk or self_player.poisoned:
             count = random.choice([0, 1, 2])
         else:
             count = 0
-            alive_players = [player for player in game.players if not player.is_dead]
-            self_index = alive_players.index(player_self)
-            if self_index == 0:
-                right_player = alive_players[-1]
+            alive_players = game.alive_players
+            if self_player is alive_players[0]:
+                previous_player = alive_players[-1]
             else:
-                right_player = alive_players[self_index - 1]
-            if self_index == alive_players.__len__() - 1:
-                left_player = alive_players[0]
+                previous_player = alive_players[alive_players.index(self_player) - 1]
+            if self_player is alive_players[-1]:
+                next_player = alive_players[0]
             else:
-                left_player = alive_players[self_index + 1]
-            if right_player.is_evil():
+                next_player = alive_players[alive_players.index(self_player) + 1]
+            if previous_player.register_as_evil():
                 count += 1
-            if left_player.is_evil():
+            if next_player.register_as_evil():
                 count += 1
         return f"存活邻座玩家中共有 {count} 个邪恶角色"

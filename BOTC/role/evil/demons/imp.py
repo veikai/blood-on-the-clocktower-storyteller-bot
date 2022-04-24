@@ -1,4 +1,7 @@
-from ....game import Game
+import random
+from typing import List
+from ....player import Player
+from ...good.townsfolk import Soldier, RavenKeeper
 from .base import DemonBase
 
 
@@ -7,13 +10,21 @@ class Imp(DemonBase):
     action_guides = "请发送 action@+要猎杀的玩家序号 例如 action@1 ，输入自己序号视为自刀"
 
     @staticmethod
-    def action(targets: list, game: Game):
-        player_self = Imp.get_player_self(Imp, game)
-        target = targets[0]
-        target_player = game.players[target]
+    def action(self_player: Player, target_players: List[Player]):
+        target_player = target_players[0]
         target_player.killed = True
-        print(f"玩家 {player_self.name} 猎杀玩家 {target_player.name}")
-
-    @staticmethod
-    def dead(game: Game):
-        pass
+        info = f"玩家 {self_player.name} 猎杀玩家 {target_player.name}"
+        print(info)
+        if not target_player.protected:
+            if target_player.role.category is Soldier and not target_player.is_drunk and not target_player.poisoned:
+                return info
+            elif target_player.role.category is RavenKeeper:
+                target_player.role.category.action_guides = "你在今晚被杀死，请发送 action@+要查看身份的玩家序号，例如 action@2"
+            elif target_player is self_player:
+                # 小恶魔自刀 随机一个爪牙变成小恶魔
+                game = self_player.game()
+                lucky_dog = random.choice([player for player in game.alive_players if player.register_as_minion()])
+                lucky_dog.role = Imp
+                lucky_dog.extra_info = "因小恶魔选择自刀，你成为了小恶魔"
+            target_player.died_of_killing = True
+        return info

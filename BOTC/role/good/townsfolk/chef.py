@@ -1,5 +1,6 @@
 import random
-from ....game import Game
+from typing import List
+from ....player import Player
 from .base import TownsfolkBase
 
 
@@ -10,9 +11,9 @@ class Chef(TownsfolkBase):
     name = "厨师"
 
     @staticmethod
-    def get_info(game: Game):
-        player_self = Chef.get_player_self(Chef, game)
-        if player_self.poisoned or player_self.is_drunk:
+    def action(self_player: Player, target_players: List[Player]):
+        game = self_player.game()
+        if self_player.poisoned or self_player.is_drunk:
             if game.players.__len__() <= 9:
                 count = random.choice([0, 1])
             elif game.players.__len__() <= 12:
@@ -22,11 +23,11 @@ class Chef(TownsfolkBase):
         else:
             count = 0
             for i, player in enumerate(game.players):
-                if player.is_evil():
+                if player.register_as_evil():
                     if i + 1 == game.players.__len__():
                         next_player = game.players[0]
                     else:
                         next_player = game.players[i + 1]
-                    if next_player.is_evil():
+                    if next_player.register_as_evil():
                         count += 1
         return f"有 {count} 对邻座邪恶玩家"

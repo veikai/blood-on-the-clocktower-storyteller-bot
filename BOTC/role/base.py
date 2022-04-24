@@ -1,45 +1,25 @@
 from typing import List
-from ..game import Game
+from ..player import Player
 
 
 class RoleBase:
     name = ""
     action_guides = ""
 
-    @staticmethod
-    def init_night():
-        pass
+    @property
+    def genuine_category(self):
+        return type(self)
+
+    @property
+    def category(self):
+        return self.genuine_category
 
     @staticmethod
-    def action(targets: List[int], game: Game):
+    def action(self_player: Player, target_players: List[Player]):
         """
-        :param targets: 目标玩家索引
-        :param game: 游戏上下文
-        :return:
-        """
-        pass
-
-    @staticmethod
-    def get_info(game: Game):
-        """
-        获取夜晚信息或行动结果
-        :param game: 游戏上下文
-        :return:
-        """
-        pass
-
-    @staticmethod
-    def get_player_self(cls, game: Game):
-        alive_players = [player for player in game.players if not player.is_dead]
-        for player in alive_players:
-            if player.role is cls:
-                return player
-
-    @staticmethod
-    def dead(game: Game):
-        """
-        死亡触发事件
-        :param game:
+        角色行动逻辑
+        :param self_player: 持有角色的玩家
+        :param target_players: 行动目标玩家
         :return:
         """
         pass

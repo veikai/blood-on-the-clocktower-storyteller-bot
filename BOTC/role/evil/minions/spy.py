@@ -1,7 +1,6 @@
 import random
-from ....game import Game
-from ...good import all_good
-from ...good.outsiders import Drunk
+from typing import List
+from ....player import Player
 from .base import MinionBase
 
 
@@ -10,28 +9,26 @@ class Spy(MinionBase):
     Each night, you see the Grimoire. You might register as good & as a Townsfolk or Outsider, even if dead.
     """
     name = "间谍"
-    fake_role = None
 
-    @staticmethod
-    def init_night():
+    @property
+    def category(self):
         if random.choice([0, 1, 2]):
-            Spy.fake_role = random.choice(all_good)
+            from ....TroubleBrewing.role import all_good
+            return random.choice(all_good)
         else:
-            Spy.fake_role = Spy
+            return Spy
 
     @staticmethod
-    def get_info(game: Game):
-        player_self = Spy.get_player_self(Spy, game)
-        other_players = [player for player in game.players if player is not player_self]
+    def action(self_player: Player, target_players: List[Player]):
+        game = self_player.game()
+        other_players = [player for player in game.players if player is not self_player]
         info_list = []
         for player in other_players:
+            info = f"玩家 {player.name} 的身份是 {player.role.genuine_category.name}"
             if player.is_drunk:
-                role_name = Drunk.name
-            else:
-                role_name = player.role.name
-            info = f"{player.name} 的身份是 {role_name}"
-            if player.is_fake_demon:
-                info += ",ta是占卜师的天敌"
+                info += ",ta是酒鬼"
+            if player.is_fake_imp:
+                info += ",ta是被占卜师当成恶魔的好人"
             if player.killed:
                 info += ",ta是恶魔今晚猎杀的目标"
             if player.poisoned:
