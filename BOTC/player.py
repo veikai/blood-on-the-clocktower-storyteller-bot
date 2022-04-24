@@ -48,8 +48,8 @@ class Player:
         self.protected = False
         self.butler = None
 
-    def send_action_guides(self):
-        self.send(self.role.action_guides)
+    async def send_action_guides(self):
+        await self.send(self.role.action_guides)
 
     async def action(self, targets: list):
         game = self.game()
@@ -95,6 +95,16 @@ class Player:
         elif self.is_fake_imp:  # Trouble Brewing
             return Imp
         return None
+
+    def is_evil(self):
+        if self.role.genuine_category in self.game_module.all_evil:
+            return True
+        return False
+
+    def is_good(self):
+        if self.role.genuine_category in self.game_module.all_good:
+            return True
+        return False
 
     async def send_info(self):
         if self.extra_info:

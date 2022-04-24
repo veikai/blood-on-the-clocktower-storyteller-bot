@@ -21,5 +21,6 @@ class WasherWoman(TownsfolkBase):
             while True:
                 player1, player2 = random.sample(game.players, 2)
                 if (category := player1.register_as_townsfolk()) or (category := player2.register_as_townsfolk()):
-                    break
+                    if category is not WasherWoman:
+                        break
         return f"玩家 {player1.name} 和 {player2.name} 中有一个 {category.name}"

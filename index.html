@@ -1,6 +1,6 @@
 <!-- Websocket 的使用示例 -->
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh_CN">
 <head>
   <meta charset="UTF-8">
   <title>测试Socket——ws://127.0.0.1:8181</title>
@@ -11,7 +11,7 @@
       var ws = new WebSocket("ws://127.0.0.1:8181/test");
       socket = ws;
       ws.onopen = function() {
-        console.log('连接成功');
+        document.getElementById("showMes").value+="与服务器连接成功\n";
       };
       ws.onmessage = function(evt) {
         var message = evt.data;
@@ -21,14 +21,14 @@
         document.getElementById("showMes").value+=message+"\n";
       };
       ws.onclose = function() {
-        alert("断开了连接");
+        document.getElementById("showMes").value+="与服务器断开连接\n";
       };
     } else {
       alert("浏览器不支持WebSocket");
     }
     function sendMeg(){
       var message = document.getElementById("mes").value + "#" + index;
-      document.getElementById("showMes").value+=message+"\n\n";
+      document.getElementById("showMes").value+=message+"\n";
       socket.send(message);
       document.getElementById("mes").value = "";
     }

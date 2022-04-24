@@ -24,7 +24,7 @@ class Imp(DemonBase):
                 # 小恶魔自刀 随机一个爪牙变成小恶魔
                 game = self_player.game()
                 lucky_dog = random.choice([player for player in game.alive_players if player.register_as_minion()])
-                lucky_dog.role = Imp
+                lucky_dog.role = Imp()
                 lucky_dog.extra_info = "因小恶魔选择自刀，你成为了小恶魔"
             target_player.died_of_killing = True
         return info

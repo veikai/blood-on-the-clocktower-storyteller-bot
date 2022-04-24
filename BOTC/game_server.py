@@ -8,7 +8,7 @@ def parse_command(command):
     commands = command.split("@")
     if commands.__len__() == 2:
         targets = []
-        for target in command[1].split(","):
+        for target in commands[1].split(","):
             try:
                 targets.append(int(target) - 1)
             except ValueError:
@@ -33,11 +33,16 @@ async def recv_user_msg(websocket):
         elif command == "下阶段":
             await game.next_stage()
         elif command.startswith("提名"):
-            await game.nominate(player_index, targets[0])
+            if targets:
+                await game.nominate(player_index, targets[0])
         elif command.startswith("投票"):
-            await game.vote(player_index, targets[0])
+            if targets:
+                await game.vote(player_index, targets[0])
         elif command == "处决":
             await game.execute()
+        elif command.startswith("shoot"):
+            if targets:
+                await game.shoot(player_index, targets[0])
         else:
             print("unknown command", command)
 
@@ -45,7 +50,7 @@ async def recv_user_msg(websocket):
 # 服务器端主逻辑
 async def run(websocket, path):
     await game.add_player(websocket)
-    await websocket.send(f"欢迎来到血染钟楼#{game.players.__len__()}")
+    await websocket.send(f"欢迎来到钟楼#{game.players.__len__()}")
     while True:
         try:
             await recv_user_msg(websocket)
