@@ -1,5 +1,5 @@
-from BOTC import game_server
+from BOTC import server
 
 
 if __name__ == '__main__':
-    game_server.start()
+    server.start()

@@ -1,0 +1,72 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <title>Flask-SocketIO Test</title>
+    <meta name="viewport" content="width=device-width">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.4/socket.io.js" integrity="sha512-aMGMvNYu8Ue4G+fHa359jcPb1u+ytAF+P2SCb+PxrjCdO3n3ZTxJ30zuH39rimUggmTwmh2u7wvQsDTHESnmfQ==" crossorigin="anonymous"></script>
+    <script type="text/javascript" charset="utf-8">
+        var index;
+        $(document).ready(function() {
+            // Connect to the Socket.IO server.
+            // The connection URL has the following format, relative to the current page:
+            //     http[s]://<domain>:<port>[/<namespace>]
+            var socket = io();
+
+            socket.on("player_index", function(msg){
+                index = msg;
+                $("#player").text("玩家: "+index);
+            });
+
+            socket.on('message', function(msg, cb) {
+                // $('#msg_board').value += msg + "\n";
+                var msg_board = document.getElementById("msg_board");
+                msg_board.value += msg + "\n";
+                msg_board.scrollTop = msg_board.scrollHeight;
+            });
+
+            // Handlers for the different forms in the page.
+            // These accept data from the user and send it to the server in a
+            // variety of ways
+            $('input#start_game').on("click", function(){
+                document.getElementById("msg_board").value = "";
+                socket.emit("command", "start game");
+            });
+            $('input#execute').on("click", function(){
+                socket.emit("command", "execute");
+            });
+            $('input#next_stage').on("click", function(){
+                socket.emit("command", "next stage");
+            });
+
+            $('form#emit').submit(function(event) {
+                var command_str = $('#command_type').val() + "@" + $('#command_board').val();
+                socket.emit("command", command_str);
+                return false;
+            });
+        });
+    </script>
+</head>
+<body>
+    <h2>Blood On the Clocktower</h2>
+    <h2 id="player">玩家: </h2>
+    <h2>信息看板:</h2>
+    <textarea rows="3" cols="30" id="msg_board" style="width:300px;height:250px;font-size:20px" readonly></textarea>
+    <h2>命令写板:</h2>
+    <form id="emit" method="POST" action='#'>
+        <select id="command_type" style="width:300px;height:50px;font-size:40px">
+            <option value="action">角色技能</option>
+            <option value="vote">投票</option>
+            <option value="nominate">提名</option>
+            <option value="shoot">开枪</option>
+        </select>
+        <br/>
+        <br/>
+        <input id="command_board" type="text" placeholder="请输入目标编号" style="width:300px;height:50px;font-size:30px">
+        <input type="submit" value="发送命令" style="width:300px;height:50px;font-size:40px">
+    </form>
+    <input id="start_game" type="button" value="开始游戏">
+    <input id="execute" type="button" value="执行处决">
+    <input id="next_stage" type="button" value="下一阶段">
+</body>
+</html>

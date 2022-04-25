@@ -1,13 +1,14 @@
 import weakref
 import importlib
+from flask_socketio import emit
 
 
 class Player:
-    def __init__(self, game, name, websocket):
+    def __init__(self, game, name, sid):
         self.game = weakref.ref(game)
         self.game_module = importlib.import_module(game.__module__)
         self.name = name
-        self.websocket = websocket
+        self.sid = sid
         self.role = None
         self.is_dead = False
         self.protected = False  # 夜晚被保护
@@ -65,18 +66,16 @@ class Player:
         self.protected = False
         self.butler = None
 
-    async def send_action_guides(self):
+    def send_action_guides(self):
         if self.extra_info:
-            await self.send(self.extra_info)
+            self.send(self.extra_info)
             self.extra_info = ""
-        await self.send(self.role.action_guides)
+        self.send(self.role.action_guides)
 
-    async def action(self, targets: list):
-        game = self.game()
-        target_players = [game.players[i] for i in targets if i != -1]
-        result = self.role.action(self, target_players)
+    def action(self, targets: list):
+        result = self.role.action(self, targets)
         if result:
-            await self.send(result)
+            self.send(result)
 
     def register_as_good(self):
         if (category := self.role.category) in self.game_module.all_good:
@@ -124,5 +123,5 @@ class Player:
             return True
         return False
 
-    async def send(self, msg):
-        await self.websocket.send(msg)
+    def send(self, msg):
+        emit("message", msg, room=self.sid)
