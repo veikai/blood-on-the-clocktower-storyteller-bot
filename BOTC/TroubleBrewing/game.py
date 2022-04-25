@@ -158,12 +158,12 @@ class Game:
         nominated_player = self.players[nominated_index]  # 被提名玩家
         if nominated_player not in self.nominated_players and nominator_player not in self.nominator_cache:
             await self.send_all(f"玩家 {nominator_player.name} 提名投票处决 玩家{nominated_player.name}")
-            if (nominated_player.role.genuine_category is Virgin
+            if (nominated_player.role.catetory is Virgin
                     and not nominated_player.is_drunk
                     and not nominated_player.poisoned
-                    and not nominator_player.is_drunk
-                    and nominator_player.role.genuine_category in all_townsfolk):
-                # 若真实村民提名了正常状态下的真实圣女 真实村民玩家死亡
+                    and nominator_player.register_as_townsfolk()
+                    and not nominator_player.is_drunk):
+                # 若村民提名了正常状态下的圣女 村民玩家死亡
                 nominator_player.is_dead = True
                 await self.send_all(f"玩家 {nominator_player.name} 因提名投票处决 玩家 {nominated_player.name} 死亡")
                 await self.next_stage()
@@ -252,7 +252,7 @@ class Game:
         target_player = self.players[target]
         if shoot_player not in self.shoot_cache:
             self.shoot_cache.append(shoot_player)
-            if (shoot_player.role.category is Slayer
+            if (shoot_player.role.genuine_category is Slayer
                     and not shoot_player.is_drunk
                     and not shoot_player.poisoned
                     and target_player.register_as_demon()):
